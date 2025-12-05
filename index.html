@@ -1,0 +1,1099 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini-Grid ROI & Bankability Calculator v4</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2, h3 {
+      color: #111827;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto 40px;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 24px 26px 30px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.08);
+      border: 1px solid #e5e7eb;
+    }
+    .subtle {
+      font-size: 0.82rem;
+      color: #6b7280;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 16px 18px 20px;
+      border: 1px solid #e5e7eb;
+    }
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      margin-bottom: 3px;
+      color: #4b5563;
+    }
+    input, select {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      background: #fcfcfc;
+      color: #111827;
+      box-sizing: border-box;
+      font-size: 0.9rem;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px #38bdf8;
+    }
+    .row {
+      margin-bottom: 8px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: linear-gradient(135deg, #22c55e, #22d3ee);
+      color: #020617;
+      font-size: 0.95rem;
+    }
+    .btn:active {
+      transform: translateY(1px);
+    }
+    .results-card {
+      margin-top: 24px;
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 18px 20px 22px;
+      border: 1px solid #e5e7eb;
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 1.06rem;
+      font-weight: 600;
+      color: #111827;
+    }
+    .muted {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      margin-top: 3px;
+    }
+    .divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 22px 0 18px;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 22px 0;
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #fbbf24;
+    }
+    .page-subtitle {
+      font-size: 0.84rem;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+    .step-panel {
+      margin-bottom: 20px;
+      border-radius: 14px;
+      padding: 20px 20px 22px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 8px 18px rgba(15,23,42,0.04);
+    }
+    .step-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .step-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #fbbf24;
+      font-weight: 700;
+    }
+    .step-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #838383;
+      margin-top: 4px;
+    }
+    .step-subcopy {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      max-width: 380px;
+    }
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card--soft {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 14px 14px 16px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 10px 25px rgba(15,23,42,0.06);
+    }
+    .card--soft .section-title {
+      color: #111827;
+    }
+    .sticky-calc-bar {
+      position: sticky;
+      bottom: 12px;
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 10px;
+    }
+    .btn--primary {
+      background: #fbbf24;
+      color: #020617;
+    }
+
+    .metric-good { color: #70dc85 !important; }
+    .metric-warn { color: #fbbf24 !important; }
+    .metric-bad  { color: #ef4444 !important; }
+
+    .bank-warning {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      display: none;
+    }
+
+    .bank-hint {
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+
+  </style>
+</head>
+<body>
+  
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Granville Energy Mini-Grid ROI &amp; Bankability Calculator v4</h1>
+      <p class="page-subtitle">
+        20‑year cashflow screening tool for PV + battery mini‑grids. Tune physical system size, lifecycle costs,
+        revenue engine and bank terms to test bankability before building a full model.
+      </p>
+    </div>
+
+    <!-- STEP 1: System & Site -->
+    <div class="step-panel">
+      <div class="step-header">
+        <div>
+          <div class="step-label">Step 1 · System &amp; Site</div>
+          <div class="step-title">Define the physical system</div>
+        </div>
+        <div class="step-subcopy">
+          Core kWp, kW and kWh plus yield and usable fraction. This block should almost never change once the site is sized.
+        </div>
+      </div>
+      <div class="step-grid">
+        <div class="card card--soft">
+          <div class="section-title">System Size</div>
+          <div class="row">
+            <label for="pvSize">PV Size (kWp)</label>
+            <input type="number" id="pvSize" value="500" min="0" step="1">
+          </div>
+          <div class="row">
+            <label for="pcsSize">PCS Size (kW)</label>
+            <input type="number" id="pcsSize" value="500" min="0" step="1">
+          </div>
+          <div class="row">
+            <label for="batSize">Battery Size (kWh)</label>
+            <input type="number" id="batSize" value="1000" min="0" step="1">
+          </div>
+        </div>
+        <div class="card card--soft">
+          <div class="section-title">Yield &amp; Energy Capture</div>
+          <div class="row">
+            <label for="yield">Specific Yield (kWh per kWp per year)</label>
+            <input type="number" id="yield" value="1750" step="10">
+          </div>
+          <div class="row">
+            <label for="usableFrac">Usable Fraction of PV Output (0–1)</label>
+            <input type="number" id="usableFrac" value="0.9" step="0.01" min="0" max="1">
+          </div>
+          <p class="subtle" style="margin-top:8px;">
+            Usable fraction reflects clipping, curtailment, technical losses and demand‑match. 0.85–0.95 is typical for
+            well‑matched mini‑grids.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Costs (CAPEX & Lifecycle) -->
+    <div class="step-panel">
+      <div class="step-header">
+        <div>
+          <div class="step-label">Step 2 · Costs (CAPEX &amp; Lifecycle)</div>
+          <div class="step-title">What it costs to build &amp; keep alive</div>
+        </div>
+        <div class="step-subcopy">
+          Hardware CAPEX, BOS, development, construction period and battery replacement assumptions.
+        </div>
+      </div>
+      <div class="step-grid">
+        <div class="card card--soft">
+          <div class="section-title">Project Build Costs</div>
+          <div class="row">
+            <label for="pvTotalCost">PV Cost – Total (R)</label>
+            <input type="number" id="pvTotalCost" value="1248548" min="0" step="1000">
+          </div>
+          <div class="row">
+            <label for="pcsBatTotalCost">PCS + Battery – Total (R)</label>
+            <input type="number" id="pcsBatTotalCost" value="4110470" min="0" step="1000">
+          </div>
+          <div class="row">
+            <label for="bosPct">BOS / Install (% of hardware CAPEX)</label>
+            <input type="number" id="bosPct" value="60" step="0.1">
+          </div>
+          <div class="row">
+            <label for="devPct">Development Costs (% of hardware CAPEX)</label>
+            <input type="number" id="devPct" value="2" step="0.1">
+          </div>
+          <div class="row">
+            <label for="constructMonths">Construction Period (months)</label>
+            <input type="number" id="constructMonths" value="6" step="1">
+          </div>
+        </div>
+        <div class="card card--soft">
+          <div class="section-title">Battery Replacement &amp; Degradation</div>
+          <div class="row">
+            <label for="battDeg">Annual Battery Degradation (%/year)</label>
+            <input type="number" id="battDeg" value="2.0" step="0.1">
+          </div>
+          <div class="row">
+            <label for="battReplaceYear">Battery Replacement Year (1–20, 0 = none)</label>
+            <input type="number" id="battReplaceYear" value="12" step="1">
+          </div>
+          <div class="row">
+            <label for="battReplaceCost">Battery Replacement Cost – hardware only (R)</label>
+            <input type="number" id="battReplaceCost" value="2500000" step="10000">
+          </div>
+          <div class="row">
+            <label for="battReplaceLabourPct">Battery Replacement Labour (% of hardware)</label>
+            <input type="number" id="battReplaceLabourPct" value="10" step="0.5">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Revenue & Operations -->
+    <div class="step-panel">
+      <div class="step-header">
+        <div>
+          <div class="step-label">Step 3 · Revenue &amp; Operations</div>
+          <div class="step-title">How money is generated &amp; protected</div>
+        </div>
+        <div class="step-subcopy">
+          Tariff structure, grid purchases, O&amp;M, insurance and escalations. This is the revenue engine view.
+        </div>
+      </div>
+      <div class="step-grid">
+        <div class="card card--soft">
+          <div class="section-title">Offtake &amp; Tariff Structure</div>
+          <div class="row">
+            <label for="offtakerType">Offtaker Type</label>
+            <select id="offtakerType">
+              <option value="mixed" selected>Mixed: Residents (prepaid) + Body Corporate bulk</option>
+              <option value="residents">Residents only (prepaid)</option>
+              <option value="bodycorp">Body Corporate only (bulk)</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="contractYears">Contract Length (years)</label>
+            <input type="number" id="contractYears" value="15" step="1">
+          </div>
+          <div class="row">
+            <label for="prepaidMode">Prepaid Mode</label>
+            <select id="prepaidMode" onchange="toggleTariffMode()">
+              <option value="fixed" selected>Prepaid – Fixed</option>
+              <option value="tou">Prepaid – Credit‑Based TOU</option>
+              <option value="postpaid">Postpaid / Levy / Invoice</option>
+            </select>
+          </div>
+          <div id="fixedTariffBlock">
+            <div class="row">
+              <label for="fixedTariff">Fixed Prepaid Tariff (R/kWh)</label>
+              <input type="number" id="fixedTariff" value="2.8" step="0.01">
+            </div>
+          </div>
+          <div id="touTariffBlock" style="display:none;">
+            <div class="row">
+              <label for="touOffPeak">TOU Off‑Peak Tariff (R/kWh)</label>
+              <input type="number" id="touOffPeak" value="2.3" step="0.01">
+            </div>
+            <div class="row">
+              <label for="touStandard">TOU Standard Tariff (R/kWh)</label>
+              <input type="number" id="touStandard" value="2.8" step="0.01">
+            </div>
+            <div class="row">
+              <label for="touPeak">TOU Peak Tariff (R/kWh)</label>
+              <input type="number" id="touPeak" value="3.4" step="0.01">
+            </div>
+            <div class="row">
+              <label for="touOffPeakShare">Off‑Peak Usage Share (0–1)</label>
+              <input type="number" id="touOffPeakShare" value="0.4" step="0.01">
+            </div>
+            <div class="row">
+              <label for="touStandardShare">Standard Usage Share (0–1)</label>
+              <input type="number" id="touStandardShare" value="0.4" step="0.01">
+            </div>
+            <div class="row">
+              <label for="touPeakShare">Peak Usage Share (0–1)</label>
+              <input type="number" id="touPeakShare" value="0.2" step="0.01">
+            </div>
+          </div>
+          <div class="row">
+            <label for="tariff">Customer Tariff – blended (R per kWh, ex VAT)</label>
+            <input type="number" id="tariff" value="2.8" step="0.01">
+          </div>
+          <div class="row">
+            <label for="tariffEsc">Tariff Escalation (% per year)</label>
+            <input type="number" id="tariffEsc" value="7" step="0.1">
+          </div>
+        </div>
+
+        <div class="card card--soft">
+          <div class="section-title">Grid &amp; Operating Costs</div>
+          <div class="row">
+            <label for="gridShare">Grid Energy Purchase (% of energy sold)</label>
+            <input type="number" id="gridShare" value="0" step="1">
+          </div>
+          <div class="row">
+            <label for="gridTariff">Grid Bulk Purchase Tariff (R/kWh)</label>
+            <input type="number" id="gridTariff" value="1.8" step="0.01">
+          </div>
+          <div class="row">
+            <label for="gridAvail">Grid Availability Factor (0–1)</label>
+            <input type="number" id="gridAvail" value="0.9" step="0.01">
+          </div>
+          <div class="row">
+            <label for="omPct">Annual O&amp;M (% of total CAPEX, year 1)</label>
+            <input type="number" id="omPct" value="1.5" step="0.1">
+          </div>
+          <div class="row">
+            <label for="omEsc">O&amp;M Escalation (% per year)</label>
+            <input type="number" id="omEsc" value="6" step="0.1">
+          </div>
+          <div class="row">
+            <label for="insurancePct">Insurance (% of CAPEX per year)</label>
+            <input type="number" id="insurancePct" value="0.45" step="0.01">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Finance & Risk (Bank Layer) -->
+    <div class="step-panel">
+      <div class="step-header">
+        <div>
+          <div class="step-label">Step 4 · Finance &amp; Risk</div>
+          <div class="step-title">Bank terms, covenants &amp; sharing</div>
+        </div>
+        <div class="step-subcopy">
+          Debt share, pricing and tenor plus DSRA, minimum cash and revenue share to the landlord/body corporate.
+        </div>
+      </div>
+      <div class="step-grid">
+        <div class="card card--soft">
+          <div class="section-title">Debt &amp; Loan Structure</div>
+          <div class="row">
+            <label for="debtShare">Debt Share (% of CAPEX)</label>
+            <input type="number" id="debtShare" value="80" step="1">
+          </div>
+          <div class="row">
+            <label for="interestRate">Interest Rate (% per year)</label>
+            <input type="number" id="interestRate" value="12" step="0.1">
+          </div>
+          <div class="row">
+            <label for="loanTenor">Loan Tenor (years)</label>
+            <input type="number" id="loanTenor" value="10" step="1">
+          </div>
+          <div class="row">
+            <label for="dsraMonths">DSRA Months (Debt Service Reserve)</label>
+            <input type="number" id="dsraMonths" value="3" step="1">
+          </div>
+          <div class="row">
+            <label for="minCash">Minimum Cash Covenant (R, annual buffer)</label>
+            <input type="number" id="minCash" value="200000" step="10000">
+          </div>
+        </div>
+        <div class="card card--soft">
+          <div class="section-title">Equity, Revenue Share &amp; Horizon</div>
+          <div class="row">
+            <label for="revSharePct">Revenue Share to Landlord / Body Corporate (% of post‑debt cash)</label>
+            <input type="number" id="revSharePct" value="10" step="0.5">
+          </div>
+          <div class="row">
+            <label for="revShareStartYear">Revenue Share Start Year</label>
+            <input type="number" id="revShareStartYear" value="1" step="1">
+          </div>
+          <div class="row">
+            <label for="projectYears">Project Analysis Horizon (years)</label>
+            <input type="number" id="projectYears" value="20" step="1">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sticky-calc-bar">
+      <button class="btn btn--primary" onclick="calculateAll()">Calculate ROI &amp; Bankability</button>
+    </div>
+
+  </div>
+
+  <!-- Summary section at bottom -->
+<div class="container" id="summaryContainer" style="margin-top: 10px; display:none;">
+    <h2>Project Summary & Bankability</h2>
+    <div class="results-card">
+      <h3>Headline Numbers</h3>
+      <div class="results-grid">
+        <div class="stat">
+          <div class="stat-label">Total System Size</div>
+          <div class="stat-value" id="sumSystemSize"></div>
+          <div class="muted" id="sumSystemDetail"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total System Cost (CAPEX)</div>
+          <div class="stat-value" id="sumCapex"></div>
+          <div class="muted" id="sumCapexDetail"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Base‑Year Tariff & Energy</div>
+          <div class="stat-value" id="sumTariffEnergy"></div>
+          <div class="muted" id="sumTariffDetail"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Annual Net Operating Cashflow (Year 1)</div>
+          <div class="stat-value" id="sumNetOpYear1"></div>
+          <div class="muted">After O&amp;M, insurance &amp; grid costs, before debt &amp; DSRA.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-card">
+      <h3>Financing, Payback & DSCR</h3>
+      <div class="results-grid">
+        <div class="stat">
+          <div class="stat-label">Debt & Equity</div>
+          <div class="stat-value" id="sumDebtEquity"></div>
+          <div class="muted" id="sumDebtEquityDetail"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Annual Debt Service</div>
+          <div class="stat-value" id="sumDebtService"></div>
+          <div class="muted" id="sumDsraInfo"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Payback & Returns</div>
+          <div class="stat-value" id="sumPayback"></div>
+          <div class="muted" id="sumPaybackDetail"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">DSCR & Bankability</div>
+          <div class="stat-value" id="sumDscR"></div>
+          <div class="muted" id="sumDscRDetail"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-card">
+      <h3>Equity & Revenue Share (Granville View)</h3>
+      <div class="results-grid">
+        <div class="stat">
+          <div class="stat-label">Equity Required (Year 0)</div>
+          <div class="stat-value" id="sumEquityReq"></div>
+          <div class="muted">Including DSRA initial funding.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Equity IRR (Granville, after revenue share)</div>
+          <div class="stat-value" id="sumEquityIRR"></div>
+          <div class="muted" id="sumEquityIRRDetail"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Equity Payback (Granville)</div>
+          <div class="stat-value" id="sumEquityPayback"></div>
+          <div class="muted">First year when cumulative equity cashflows turn positive.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Revenue Share to Landlord / Body Corporate</div>
+          <div class="stat-value" id="sumRevShare"></div>
+          <div class="muted" id="sumRevShareDetail"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="results-card">
+      <h3>Bank Risk Intelligence</h3>
+      <div id="bankWarnings" class="bank-warning"></div>
+      <div class="bank-hint">
+        DSCR target ≥ 1.20× · Equity IRR target 18–25% · Max leverage typical ≤ 75%
+      </div>
+    </div>
+
+<p class="muted">
+      Notes: This is a simplified bankability model for screening purposes. It assumes level annual debt service,
+      constant grid‑energy share, and annual (not monthly) cashflow resolution. Always run a full financial close model
+      before committing to financing.
+    </p>
+  </div>
+
+  <script>
+    function formatNumber(num, decimals) {
+      if (!isFinite(num)) return 'N/A';
+      return num.toLocaleString('en-ZA', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function toggleTariffMode() {
+      const mode = document.getElementById('prepaidMode').value;
+      document.getElementById('fixedTariffBlock').style.display = (mode === 'fixed') ? 'block' : 'none';
+      document.getElementById('touTariffBlock').style.display = (mode === 'tou') ? 'block' : 'none';
+    }
+
+    // Simple IRR solver using Newton-Raphson
+    function computeIRR(cashflows, guess = 0.12) {
+      let rate = guess;
+      for (let i = 0; i < 50; i++) {
+        let npv = 0;
+        let dnpv = 0;
+        for (let t = 0; t < cashflows.length; t++) {
+          const cf = cashflows[t];
+          const denom = Math.pow(1 + rate, t);
+          npv += cf / denom;
+          if (denom !== 0) {
+            dnpv -= t * cf / (denom * (1 + rate));
+          }
+        }
+        if (Math.abs(npv) < 1e-6) break;
+        if (dnpv === 0) return null;
+        rate = rate - npv / dnpv;
+      }
+      return rate;
+    }
+
+    function calculateAll() {
+      // Core inputs
+      const pvSize = parseFloat(document.getElementById('pvSize').value) || 0;
+      const pcsSize = parseFloat(document.getElementById('pcsSize').value) || 0;
+      const batSize = parseFloat(document.getElementById('batSize').value) || 0;
+
+      const pvCostTotal = parseFloat(document.getElementById('pvTotalCost').value) || 0;
+      const pcsBatCostTotal = parseFloat(document.getElementById('pcsBatTotalCost').value) || 0;
+
+      const yieldPerKwp = parseFloat(document.getElementById('yield').value) || 0;
+      const usableFrac = parseFloat(document.getElementById('usableFrac').value) || 0;
+      const bosPct = (parseFloat(document.getElementById('bosPct').value) || 0) / 100.0;
+      const omPct = (parseFloat(document.getElementById('omPct').value) || 0) / 100.0;
+      const battDegPct = (parseFloat(document.getElementById('battDeg').value) || 0) / 100.0;
+
+      const debtShare = (parseFloat(document.getElementById('debtShare').value) || 0) / 100.0;
+      const interestRate = (parseFloat(document.getElementById('interestRate').value) || 0) / 100.0;
+      const loanTenor = parseInt(document.getElementById('loanTenor').value) || 0;
+
+      const tariffEsc = (parseFloat(document.getElementById('tariffEsc').value) || 0) / 100.0;
+      const omEsc = (parseFloat(document.getElementById('omEsc').value) || 0) / 100.0;
+      const insurancePct = (parseFloat(document.getElementById('insurancePct').value) || 0) / 100.0;
+
+      const gridSharePct = (parseFloat(document.getElementById('gridShare').value) || 0) / 100.0;
+      const gridTariff = parseFloat(document.getElementById('gridTariff').value) || 0;
+      const gridAvail = parseFloat(document.getElementById('gridAvail').value) || 0;
+
+      const devPct = (parseFloat(document.getElementById('devPct').value) || 0) / 100.0;
+      const constructMonths = parseFloat(document.getElementById('constructMonths').value) || 0;
+
+      const battReplaceYear = parseInt(document.getElementById('battReplaceYear').value) || 0;
+      const battReplaceCost = parseFloat(document.getElementById('battReplaceCost').value) || 0;
+      const battReplaceLabourPct = (parseFloat(document.getElementById('battReplaceLabourPct').value) || 0) / 100.0;
+
+      const dsraMonths = parseFloat(document.getElementById('dsraMonths').value) || 0;
+      const minCash = parseFloat(document.getElementById('minCash').value) || 0;
+
+      const revSharePct = (parseFloat(document.getElementById('revSharePct').value) || 0) / 100.0;
+      const revShareStartYear = parseInt(document.getElementById('revShareStartYear').value) || 1;
+
+      const projectYears = parseInt(document.getElementById('projectYears').value) || 20;
+
+      // Tariff logic (fixed vs TOU)
+      let customerTariffBase = parseFloat(document.getElementById('tariff').value) || 0;
+      const prepaidMode = document.getElementById('prepaidMode').value;
+      if (prepaidMode === 'fixed') {
+        const fixedT = parseFloat(document.getElementById('fixedTariff').value) || 0;
+        customerTariffBase = fixedT;
+      } else if (prepaidMode === 'tou') {
+        const tOff = parseFloat(document.getElementById('touOffPeak').value) || 0;
+        const tStd = parseFloat(document.getElementById('touStandard').value) || 0;
+        const tPk  = parseFloat(document.getElementById('touPeak').value) || 0;
+        const sOff = parseFloat(document.getElementById('touOffPeakShare').value) || 0;
+        const sStd = parseFloat(document.getElementById('touStandardShare').value) || 0;
+        const sPk  = parseFloat(document.getElementById('touPeakShare').value) || 0;
+        const sumS = sOff + sStd + sPk || 1;
+        const nOff = sOff / sumS;
+        const nStd = sStd / sumS;
+        const nPk  = sPk / sumS;
+        customerTariffBase = tOff * nOff + tStd * nStd + tPk * nPk;
+      }
+      // else postpaid: use blended tariff field as-is.
+
+      // Hardware CAPEX and BOS
+      const hardwareCapex = pvCostTotal + pcsBatCostTotal;
+      const bosCapex = hardwareCapex * bosPct;
+      const devCost = hardwareCapex * devPct;
+      const baseCapexBeforeIDC = hardwareCapex + bosCapex + devCost;
+
+      // Interest during construction (IDC) approximation on debt portion only
+      const debtCapexApprox = baseCapexBeforeIDC * debtShare;
+      const idc = debtCapexApprox * interestRate * (constructMonths / 12.0);
+
+      const totalCapex = baseCapexBeforeIDC + idc;
+
+      // Debt and equity
+      const debtAmount = totalCapex * debtShare;
+      const equityAmount = totalCapex - debtAmount;
+
+      // Level annual debt service (annuity)
+      let annualDebtService = 0;
+      if (interestRate > 0 && loanTenor > 0) {
+        const r = interestRate;
+        const n = loanTenor;
+        annualDebtService = debtAmount * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      }
+
+      const dsraTarget = annualDebtService * (dsraMonths / 12.0);
+
+      // Base energy (year 1)
+      const baseEnergyYear1 = pvSize * yieldPerKwp * usableFrac; // kWh
+      const baseTariffYear1 = customerTariffBase;
+
+      // Arrays for cashflows
+      const years = [];
+      const revenue = [];
+      const gridCost = [];
+      const omCost = [];
+      const insuranceCost = [];
+      const netOperating = [];
+      const dsraTopUp = [];
+      const dsraBalance = [];
+      const dscrArray = [];
+      const debtServiceArray = [];
+      const equityCf = [];
+      const revShareToPartner = [];
+      const granvilleEquityCf = [];
+
+      // Year 0 equity outflow: equity + DSRA initial funding
+      const initialDsraFunding = dsraTarget;
+      equityCf.push(-(equityAmount + initialDsraFunding));
+      granvilleEquityCf.push(-(equityAmount + initialDsraFunding));
+      dsraBalance.push(initialDsraFunding);
+      years.push(0);
+      debtServiceArray.push(0);
+      dscrArray.push(null);
+      revenue.push(0); gridCost.push(0); omCost.push(0); insuranceCost.push(0); netOperating.push(0); dsraTopUp.push(0); revShareToPartner.push(0);
+
+      let minDSCR = Infinity;
+      let avgDSCRSum = 0;
+      let avgDSCRCount = 0;
+      let equityCumulative = -(equityAmount + initialDsraFunding);
+      let equityPaybackYear = null;
+      let totalRevSharePaid = 0;
+
+      for (let y = 1; y <= projectYears; y++) {
+        years.push(y);
+
+        // Energy with degradation
+        const energyY = baseEnergyYear1 * Math.pow(1 - battDegPct, y - 1);
+        const tariffY = baseTariffYear1 * Math.pow(1 + tariffEsc, y - 1);
+
+        const revY = energyY * tariffY;
+        revenue.push(revY);
+
+        // Grid cost
+        const effectiveGridShare = gridSharePct * gridAvail;
+        const gridEnergyY = energyY * effectiveGridShare;
+        const gridCostY = gridEnergyY * gridTariff;
+        gridCost.push(gridCostY);
+
+        // O&M and insurance (on totalCapex)
+        const omY = totalCapex * omPct * Math.pow(1 + omEsc, y - 1);
+        const insY = totalCapex * insurancePct * Math.pow(1 + omEsc, y - 1);
+        omCost.push(omY);
+        insuranceCost.push(insY);
+
+        // Battery replacement CAPEX
+        let battReplaceY = 0;
+        if (battReplaceYear > 0 && y === battReplaceYear) {
+          battReplaceY = battReplaceCost * (1 + battReplaceLabourPct);
+        }
+
+        // Net operating cashflow before financing & DSRA (including replacement)
+        const netOp = revY - gridCostY - omY - insY - battReplaceY;
+        netOperating.push(netOp);
+
+        // DSRA management (only while loan outstanding)
+        const prevDsra = dsraBalance[dsraBalance.length - 1] || 0;
+        let targetDsraY = 0;
+        if (y <= loanTenor) {
+          targetDsraY = dsraTarget;
+        }
+        let topUpY = 0;
+        let dsraEndY = prevDsra;
+        if (targetDsraY > prevDsra) {
+          topUpY = targetDsraY - prevDsra;
+          dsraEndY = targetDsraY;
+        } else if (targetDsraY < prevDsra) {
+          // release surplus DSRA back to project at end of loan
+          const release = prevDsra - targetDsraY;
+          // treat release as additional cash in this year
+          // add to netOp
+          // we will add release below
+          dsraEndY = targetDsraY;
+          // incorporate release into netOp
+          netOperating[y] += release;
+        }
+        dsraTopUp.push(topUpY);
+        dsraBalance.push(dsraEndY);
+
+        // Cash available for debt service (after DSRA top-up)
+        let cashBeforeDebt = netOp - topUpY;
+
+        // Debt service this year
+        let debtServiceY = 0;
+        if (y <= loanTenor) {
+          debtServiceY = annualDebtService;
+        }
+        debtServiceArray.push(debtServiceY);
+
+        // DSCR
+        let dscrY = null;
+        if (debtServiceY > 0) {
+          dscrY = cashBeforeDebt / debtServiceY;
+          dscrArray.push(dscrY);
+          if (dscrY < minDSCR) minDSCR = dscrY;
+          if (isFinite(dscrY)) {
+            avgDSCRSum += dscrY;
+            avgDSCRCount += 1;
+          }
+        } else {
+          dscrArray.push(null);
+        }
+
+        // Cash after debt service
+        let cashAfterDebt = cashBeforeDebt - debtServiceY;
+
+        // Apply minimum cash covenant (simple annual clamp)
+        let distributable = 0;
+        if (cashAfterDebt > minCash) {
+          distributable = cashAfterDebt - minCash;
+        }
+
+        // Revenue share to partner (post‑debt)
+        let partnerShareY = 0;
+        if (y >= revShareStartYear && distributable > 0) {
+          partnerShareY = distributable * revSharePct;
+        }
+        revShareToPartner.push(partnerShareY);
+        totalRevSharePaid += partnerShareY;
+
+        const equityDistributionY = distributable - partnerShareY;
+
+        equityCf.push(equityDistributionY);
+        granvilleEquityCf.push(equityDistributionY);
+        equityCumulative += equityDistributionY;
+        if (equityPaybackYear === null && equityCumulative >= 0) {
+          equityPaybackYear = y;
+        }
+      }
+
+      const avgDSCR = avgDSCRCount > 0 ? (avgDSCRSum / avgDSCRCount) : null;
+
+      // Equity IRR
+      const irr = computeIRR(granvilleEquityCf, 0.15);
+      const irrPct = irr != null && isFinite(irr) ? irr * 100 : null;
+
+      // Simple project payback (using net operating cashflow only, before financing)
+      let projectCum =  -totalCapex;
+      let projectPayback = null;
+      for (let y = 1; y <= projectYears; y++) {
+        projectCum += netOperating[y];
+        if (projectPayback === null && projectCum >= 0) {
+          projectPayback = y;
+        }
+      }
+
+      // Year-1 net op cashflow
+      const netOpYear1 = netOperating[1];
+
+      // Populate summary fields
+      document.getElementById('sumSystemSize').textContent =
+        formatNumber(pvSize, 0) + " kWp PV";
+      document.getElementById('sumSystemDetail').textContent =
+        "PCS: " + formatNumber(pcsSize, 0) + " kW, Battery: " + formatNumber(batSize, 0) + " kWh";
+
+      document.getElementById('sumCapex').textContent =
+        "R " + formatNumber(totalCapex, 0);
+      document.getElementById('sumCapexDetail').textContent =
+        "Hardware: R " + formatNumber(hardwareCapex, 0) +
+        " | BOS & install: R " + formatNumber(bosCapex, 0) +
+        " | Dev + IDC: R " + formatNumber(devCost + idc, 0);
+
+      document.getElementById('sumTariffEnergy').textContent =
+        "R " + formatNumber(baseTariffYear1, 2) + " / kWh | " +
+        formatNumber(baseEnergyYear1 / 1e6, 3) + " GWh / year";
+      document.getElementById('sumTariffDetail').textContent =
+        "Year‑1 revenue: R " + formatNumber(baseEnergyYear1 * baseTariffYear1, 0) +
+        " (before grid costs & O&M).";
+
+      document.getElementById('sumNetOpYear1').textContent =
+        "R " + formatNumber(netOpYear1, 0);
+
+      document.getElementById('sumDebtEquity').textContent =
+        "Debt: R " + formatNumber(debtAmount, 0) +
+        " | Equity: R " + formatNumber(equityAmount, 0);
+      document.getElementById('sumDebtEquityDetail').textContent =
+        "Debt share: " + formatNumber(debtShare * 100, 1) + "% | Interest: " +
+        formatNumber(interestRate * 100, 1) + "% | Tenor: " + loanTenor + " yrs";
+
+      document.getElementById('sumDebtService').textContent =
+        "R " + formatNumber(annualDebtService, 0) + " / year";
+      document.getElementById('sumDsraInfo').textContent =
+        "DSRA target: R " + formatNumber(dsraTarget, 0) +
+        " (" + formatNumber(dsraMonths, 0) + " months of debt service).";
+
+      document.getElementById('sumPayback').textContent =
+        (projectPayback != null ? formatNumber(projectPayback, 2) + " yrs" : "N/A");
+      const paybackDetail = [];
+      if (projectPayback != null) paybackDetail.push("Project payback (pre‑finance).");
+      if (equityPaybackYear != null) paybackDetail.push("Equity payback: " + equityPaybackYear + " yrs.");
+      if (irrPct != null) paybackDetail.push("Granville equity IRR: " + formatNumber(irrPct, 1) + "%.");
+      document.getElementById('sumPaybackDetail').textContent = paybackDetail.join(" ");
+
+      let dscrLabel = "N/A";
+      if (isFinite(minDSCR)) {
+        dscrLabel = "Min DSCR: " + formatNumber(minDSCR, 2);
+        if (avgDSCR != null && isFinite(avgDSCR)) {
+          dscrLabel += " | Avg DSCR: " + formatNumber(avgDSCR, 2);
+        }
+      }
+      document.getElementById('sumDscR').textContent = dscrLabel;
+      let bankabilityText = "";
+      if (isFinite(minDSCR)) {
+        if (minDSCR >= 1.3) bankabilityText = "Very strong debt service coverage.";
+        else if (minDSCR >= 1.2) bankabilityText = "Bankable DSCR for most lenders.";
+        else if (minDSCR >= 1.1) bankabilityText = "Borderline – likely needs structuring (more equity, lower interest, longer tenor).";
+        else if (minDSCR >= 1.0) bankabilityText = "Below typical lender thresholds – high risk.";
+        else bankabilityText = "DSCR < 1.0 – project cannot service debt as structured.";
+      } else {
+        bankabilityText = "No debt or invalid DSCR inputs.";
+      }
+      document.getElementById('sumDscRDetail').textContent = bankabilityText;
+
+      document.getElementById('sumEquityReq').textContent =
+        "R " + formatNumber(equityAmount + initialDsraFunding, 0);
+
+      if (irrPct != null && isFinite(irrPct)) {
+        document.getElementById('sumEquityIRR').textContent =
+          formatNumber(irrPct, 1) + " %";
+        document.getElementById('sumEquityIRRDetail').textContent =
+          "Includes DSRA funding and post‑debt revenue share.";
+      } else {
+        document.getElementById('sumEquityIRR').textContent = "N/A";
+        document.getElementById('sumEquityIRRDetail').textContent =
+          "IRR could not be calculated (check inputs or cashflow sign pattern).";
+      }
+
+      document.getElementById('sumEquityPayback').textContent =
+        equityPaybackYear != null ? equityPaybackYear + " yrs" : "N/A";
+
+      document.getElementById('sumRevShare').textContent =
+        "R " + formatNumber(totalRevSharePaid, 0) + " over " + projectYears + " yrs";
+      document.getElementById('sumRevShareDetail').textContent =
+        "Revenue share: " + formatNumber(revSharePct * 100, 1) + "% of post‑debt cash from year " + revShareStartYear + ".";
+
+      // ==== Bank Intelligence & Colour Layer ====
+      applyBankIntelligence(minDSCR, irrPct, debtShare, loanTenor, battReplaceYear);
+
+      // Top row: Year-1 Net Operating CF vs CAPEX
+      const netOpElem = document.getElementById('sumNetOpYear1');
+      if (totalCapex > 0) {
+        const netOpRatio = netOpYear1 / totalCapex; // e.g. 0.12 = 12% of CAPEX
+        if (netOpRatio >= 0.12)      netOpElem.className = "stat-value metric-good";
+        else if (netOpRatio >= 0.08) netOpElem.className = "stat-value metric-warn";
+        else                         netOpElem.className = "stat-value metric-bad";
+      }
+
+      // Project payback (pre-finance)
+      const paybackElem = document.getElementById('sumPayback');
+      if (projectPayback != null && isFinite(projectPayback)) {
+        if (projectPayback <= 7)       paybackElem.className = "stat-value metric-good";
+        else if (projectPayback <= 10) paybackElem.className = "stat-value metric-warn";
+        else                           paybackElem.className = "stat-value metric-bad";
+      }
+
+      // Equity IRR (Granville)
+      const irrElem = document.getElementById('sumEquityIRR');
+      if (irrPct != null && isFinite(irrPct)) {
+        if (irrPct >= 20)       irrElem.className = "stat-value metric-good";
+        else if (irrPct >= 15)  irrElem.className = "stat-value metric-warn";
+        else                    irrElem.className = "stat-value metric-bad";
+      }
+
+      // Debt share (leverage)
+      const debtEqElem = document.getElementById('sumDebtEquity');
+      if (debtShare != null && isFinite(debtShare)) {
+        if (debtShare <= 0.70)      debtEqElem.className = "stat-value metric-good";
+        else if (debtShare <= 0.80) debtEqElem.className = "stat-value metric-warn";
+        else                        debtEqElem.className = "stat-value metric-bad";
+      }
+
+      // DSCR (using Min DSCR as gate)
+      const dscElem = document.getElementById('sumDscR');
+      if (minDSCR != null && isFinite(minDSCR)) {
+        if (minDSCR >= 1.30)       dscElem.className = "stat-value metric-good";
+        else if (minDSCR >= 1.15)  dscElem.className = "stat-value metric-warn";
+        else                       dscElem.className = "stat-value metric-bad";
+      }
+
+      // Equity required (including DSRA) as % of CAPEX
+      const eqReqElem = document.getElementById('sumEquityReq');
+      if (totalCapex > 0) {
+        const equityInitial = equityAmount + initialDsraFunding;
+        const eqRatio = equityInitial / totalCapex;
+        if (eqRatio <= 0.25)       eqReqElem.className = "stat-value metric-good";
+        else if (eqRatio <= 0.35)  eqReqElem.className = "stat-value metric-warn";
+        else                       eqReqElem.className = "stat-value metric-bad";
+      }
+
+      // Equity payback (Granville)
+      const eqPbElem = document.getElementById('sumEquityPayback');
+      if (equityPaybackYear != null && isFinite(equityPaybackYear)) {
+        if (equityPaybackYear <= 8)       eqPbElem.className = "stat-value metric-good";
+        else if (equityPaybackYear <= 12) eqPbElem.className = "stat-value metric-warn";
+        else                              eqPbElem.className = "stat-value metric-bad";
+      }
+
+      // Revenue share to landlord / body corporate
+      const revShareElem = document.getElementById('sumRevShare');
+      if (revSharePct != null && isFinite(revSharePct)) {
+        if (revSharePct === 0) {
+          revShareElem.className = "stat-value metric-bad";
+        } else if (revSharePct >= 0.05 && revSharePct <= 0.20) {
+          revShareElem.className = "stat-value metric-good";
+        } else {
+          revShareElem.className = "stat-value metric-warn";
+        }
+      }
+
+      document.getElementById('summaryContainer').style.display = 'block';
+      // Scroll to summary
+      document.getElementById('summaryContainer').scrollIntoView({behavior: 'smooth'});
+    }
+
+    // Auto‑run once on load
+    window.onload = calculateAll;
+    function applyBankIntelligence(minDSCR, irrPct, debtShare, loanTenor, battReplaceYear) {
+      const warningsBox = document.getElementById("bankWarnings");
+      let warnings = [];
+
+      // DSCR warnings
+      if (minDSCR !== null && isFinite(minDSCR)) {
+        if (minDSCR < 1.10) {
+          warnings.push("🔴 Structurally unbankable: Minimum DSCR < 1.10×");
+        } else if (minDSCR < 1.20) {
+          warnings.push("🟠 Borderline bankability: DSCR below typical 1.20× minimum");
+        }
+      }
+
+      // Equity IRR warnings
+      if (irrPct !== null && isFinite(irrPct)) {
+        if (irrPct < 15) {
+          warnings.push("🟠 Low risk-adjusted return: Equity IRR below 15%");
+        } else if (irrPct < 18) {
+          warnings.push("🟡 Below ideal infra return band (18–25%)");
+        }
+      }
+
+      // Leverage warning
+      if (debtShare > 0.75) {
+        warnings.push("🟠 Aggressive leverage: Debt share exceeds 75% of CAPEX");
+      }
+
+      // Battery vs loan tenor overlap
+      if (battReplaceYear > 0 && battReplaceYear <= loanTenor) {
+        warnings.push("🟡 Battery replacement overlaps loan tenor → refinancing & cashflow risk");
+      }
+
+      if (warnings.length > 0) {
+        warningsBox.innerHTML = warnings.join("<br>");
+        warningsBox.style.display = "block";
+      } else {
+        warningsBox.style.display = "none";
+      }
+    }
+
+  </script>
+</body>
+</html>
