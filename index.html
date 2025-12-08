@@ -1,9 +1,10 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Granville</title>
+  <title>Mini-Grid ROI & Bankability Calculator v4</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -81,7 +82,7 @@
       border: none;
       cursor: pointer;
       font-weight: 600;
-      background: linear-gradient(135deg, #22c55e, #22d3ee);
+      background: linear-gradient(135deg, #fbbf24, #fcd34d);
       color: #020617;
       font-size: 0.95rem;
     }
@@ -224,7 +225,79 @@
     }
 
 
-  </style>
+  
+    .project-bar {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, rgba(250,150,0,0.08), rgba(255,255,255,0.9));
+      border: 1px solid #e5e7eb;
+    }
+    .project-bar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      margin-bottom: 6px;
+    }
+    .project-bar-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 220px;
+    }
+    .project-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #4b5563;
+      margin-bottom: 4px;
+    }
+    .project-input,
+    .project-select {
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      font-size: 0.85rem;
+      min-width: 220px;
+    }
+    .project-buttons {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+    .project-buttons .btn {
+      font-size: 0.8rem;
+      padding-inline: 10px;
+      padding-block: 6px;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .sticky-calc-bar,
+      .project-bar,
+      .step-panel,
+      .helper-text,
+      .subtle {
+        display: none !important;
+      }
+      #summaryContainer {
+        display: block !important;
+        margin-top: 0;
+      }
+      .page-header {
+        margin-bottom: 6px;
+      }
+      .page-subtitle {
+        font-size: 0.8rem;
+      }
+      .results-card {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb;
+      }
+    }
+
+</style>
 </head>
 <body>
   
@@ -234,6 +307,35 @@
       <p class="page-subtitle">
         20‑year cashflow screening tool for PV + battery mini‑grids. Tune physical system size, lifecycle costs,
         revenue engine and bank terms to test bankability before building a full model.
+      </p>
+    </div>
+
+
+    <div class="project-bar">
+      <div class="project-bar-row">
+        <div class="project-bar-group">
+          <label for="projectName" class="project-label">Project Name</label>
+          <input id="projectName" type="text" class="project-input" placeholder="e.g. The Quails Micro-Grid" />
+        </div>
+        <div class="project-bar-group project-buttons">
+          <button type="button" class="btn btn--secondary" onclick="saveProject()">Save Project</button>
+          <button type="button" class="btn btn--ghost" onclick="loadSelectedProject()">Load</button>
+          <button type="button" class="btn btn--ghost" onclick="deleteSelectedProject()">Delete</button>
+        </div>
+      </div>
+      <div class="project-bar-row">
+        <div class="project-bar-group">
+          <label for="savedProjects" class="project-label">Saved Projects</label>
+          <select id="savedProjects" class="project-select">
+            <option value="">-- None saved yet --</option>
+          </select>
+        </div>
+        <div class="project-bar-group project-buttons">
+          <button type="button" class="btn btn--secondary" onclick="exportSummaryPdf()">Export Summary to PDF</button>
+        </div>
+      </div>
+      <p class="subtle">
+        Saved projects are stored locally in this browser only (using localStorage). Clearing site data will remove them.
       </p>
     </div>
 
@@ -495,6 +597,21 @@
             <input type="number" id="projectYears" value="20" step="1">
           </div>
         </div>
+        <div class="card card--soft">
+          <div class="section-title">Scenario &amp; Stress Presets</div>
+          <div class="row">
+            <label for="scenarioPreset">Scenario Mode</label>
+            <select id="scenarioPreset" onchange="applyScenarioPreset()">
+              <option value="custom" selected>Custom / Base Case (manual)</option>
+              <option value="bank_conservative">Bank Conservative Stress</option>
+              <option value="severe_downside">Severe Downside Stress</option>
+            </select>
+          </div>
+          <p class="subtle">
+            Presets temporarily adjust tariff, demand, O&amp;M, battery and finance assumptions for stress testing.
+            Switch back to <strong>Custom / Base Case</strong> to restore your original inputs.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -533,7 +650,40 @@
       </div>
     </div>
 
+    
     <div class="results-card">
+      <h3>Profitability & Margins (Year 1)</h3>
+      <div class="results-grid">
+        <div class="stat">
+          <div class="stat-label">Gross Profit (Year 1)</div>
+          <div class="stat-value" id="sumGrossProfit"></div>
+          <div class="muted">Revenue minus grid energy cost.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Gross Profit Margin</div>
+          <div class="stat-value" id="sumGrossMargin"></div>
+          <div class="muted">Gross profit ÷ revenue.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">OPEX as % of Revenue</div>
+          <div class="stat-value" id="sumOpexPct"></div>
+          <div class="muted">O&amp;M + insurance as recurring operating costs.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Net Profit / Interest Payable</div>
+          <div class="stat-value" id="sumNetOverInterest"></div>
+          <div class="muted">Net operating cashflow after interest ÷ interest cost.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">EBITDA Margin over Expenditure</div>
+          <div class="stat-value" id="sumEbitdaMargin"></div>
+          <div class="muted">EBITDA (≈ net operating) ÷ (grid + OPEX).</div>
+        </div>
+      </div>
+    </div>
+
+
+<div class="results-card">
       <h3>Financing, Payback & DSCR</h3>
       <div class="results-grid">
         <div class="stat">
@@ -560,7 +710,7 @@
     </div>
 
     <div class="results-card">
-      <h3>Equity & Revenue Share (Granville View)</h3>
+      <h3>Equity & Revenue Share (<span id="equityProjectView">Project View</span>)</h3>
       <div class="results-grid">
         <div class="stat">
           <div class="stat-label">Equity Required (Year 0)</div>
@@ -568,12 +718,12 @@
           <div class="muted">Including DSRA initial funding.</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Equity IRR (Granville, after revenue share)</div>
+          <div class="stat-label">Equity IRR (After revenue share)</div>
           <div class="stat-value" id="sumEquityIRR"></div>
           <div class="muted" id="sumEquityIRRDetail"></div>
         </div>
         <div class="stat">
-          <div class="stat-label">Equity Payback (Granville)</div>
+          <div class="stat-label">Equity Payback</div>
           <div class="stat-value" id="sumEquityPayback"></div>
           <div class="muted">First year when cumulative equity cashflows turn positive.</div>
         </div>
@@ -601,7 +751,179 @@
   </div>
 
   <script>
-    function formatNumber(num, decimals) {
+    
+    // === Project save/load utilities (localStorage-based) ===
+    const PROJECT_PREFIX = "miniGridProject_";
+
+    function getAllProjectKeys() {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(PROJECT_PREFIX)) {
+          keys.push(k);
+        }
+      }
+      return keys;
+    }
+
+    function loadSavedProjectsDropdown() {
+      const select = document.getElementById('savedProjects');
+      if (!select) return;
+      // Clear existing options
+      select.innerHTML = '<option value="">-- Select saved project --</option>';
+      const keys = getAllProjectKeys().sort();
+      keys.forEach(k => {
+        const name = k.replace(PROJECT_PREFIX, '');
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+    }
+
+    function collectInputs() {
+      const ids = [
+        'pvSize','pcsSize','batSize',
+        'pvTotalCost','pcsBatTotalCost',
+        'yield','usableFrac','bosPct','omPct','battDeg',
+        'debtShare','interestRate','loanTenor','tariffEsc',
+        'omEsc','insurancePct',
+        'tariff','prepaidMode','fixedTariff','touOffPeak','touStandard','touPeak',
+        'touOffPeakShare','touStandardShare','touPeakShare',
+        'gridShare','gridTariff','gridAvail',
+        'devPct','constructMonths',
+        'battReplaceYear','battReplaceCost','battReplaceLabourPct',
+        'dsraMonths','minCash',
+        'revSharePct','revShareStartYear',
+        'projectYears'
+      ];
+      const data = {};
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.type === 'checkbox') {
+          data[id] = el.checked;
+        } else {
+          data[id] = el.value;
+        }
+      });
+      const modeEl = document.getElementById('prepaidMode');
+      if (modeEl) {
+        data['prepaidMode'] = modeEl.value;
+      }
+      return data;
+    }
+
+    function applyInputs(data) {
+      if (!data) return;
+      Object.keys(data).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const val = data[id];
+        if (el.type === 'checkbox') {
+          el.checked = !!val;
+        } else if (el.tagName === 'SELECT') {
+          el.value = val;
+        } else {
+          el.value = val;
+        }
+      });
+      // Ensure tariff mode UI matches saved mode
+      if (data['prepaidMode']) {
+        const modeEl = document.getElementById('prepaidMode');
+        if (modeEl) {
+          modeEl.value = data['prepaidMode'];
+          toggleTariffMode();
+        }
+      }
+    }
+
+    function saveProject() {
+      const nameInput = document.getElementById('projectName');
+      if (!nameInput) return;
+      const rawName = (nameInput.value || '').trim();
+      if (!rawName) {
+        alert('Please enter a Project Name before saving.');
+        return;
+      }
+      const key = PROJECT_PREFIX + rawName;
+      const payload = {
+        name: rawName,
+        savedAt: new Date().toISOString(),
+        inputs: collectInputs()
+      };
+      try {
+        localStorage.setItem(key, JSON.stringify(payload));
+        loadSavedProjectsDropdown();
+        const select = document.getElementById('savedProjects');
+        if (select) select.value = rawName;
+        alert('Project "' + rawName + '" saved in this browser.');
+      } catch (e) {
+        console.error('Error saving project', e);
+        alert('Could not save project (localStorage error).');
+      }
+    }
+
+    function loadSelectedProject() {
+      const select = document.getElementById('savedProjects');
+      if (!select) return;
+      const name = select.value;
+      if (!name) {
+        alert('Please select a saved project to load.');
+        return;
+      }
+      const key = PROJECT_PREFIX + name;
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        alert('No data found for "' + name + '".');
+        return;
+      }
+      try {
+        const payload = JSON.parse(raw);
+        if (payload && payload.inputs) {
+          applyInputs(payload.inputs);
+          const nameInput = document.getElementById('projectName');
+          if (nameInput) nameInput.value = name;
+          calculateAll();
+        }
+      } catch (e) {
+        console.error('Error loading project', e);
+        alert('Could not load project (data error).');
+      }
+    }
+
+    function deleteSelectedProject() {
+      const select = document.getElementById('savedProjects');
+      if (!select) return;
+      const name = select.value;
+      if (!name) {
+        alert('Please select a saved project to delete.');
+        return;
+      }
+      if (!confirm('Delete project "' + name + '" from this browser?')) return;
+      const key = PROJECT_PREFIX + name;
+      localStorage.removeItem(key);
+      loadSavedProjectsDropdown();
+      const nameInput = document.getElementById('projectName');
+      if (nameInput && nameInput.value.trim() === name) {
+        nameInput.value = '';
+      }
+    }
+
+    function exportSummaryPdf() {
+      // Show summary if hidden, then trigger browser print dialog
+      const summary = document.getElementById('summaryContainer');
+      if (summary) {
+        summary.style.display = 'block';
+      }
+      window.print();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSavedProjectsDropdown();
+    });
+
+function formatNumber(num, decimals) {
       if (!isFinite(num)) return 'N/A';
       return num.toLocaleString('en-ZA', {
         minimumFractionDigits: decimals,
@@ -634,6 +956,102 @@
         rate = rate - npv / dnpv;
       }
       return rate;
+    }
+
+
+    // === Scenario preset logic (Base, Bank Conservative, Severe) ===
+    let basePresetSnapshot = null;
+
+    function getFieldNumber(id) {
+      const el = document.getElementById(id);
+      if (!el) return 0;
+      const v = parseFloat(el.value);
+      return isNaN(v) ? 0 : v;
+    }
+
+    function setFieldNumber(id, value) {
+      const el = document.getElementById(id);
+      if (!el || !isFinite(value)) return;
+      el.value = value;
+    }
+
+    function snapshotBasePreset() {
+      if (basePresetSnapshot) return; // only capture once
+      basePresetSnapshot = {
+        usableFrac: getFieldNumber('usableFrac'),
+        fixedTariff: getFieldNumber('fixedTariff'),
+        tariff: getFieldNumber('tariff'),
+        omPct: getFieldNumber('omPct'),
+        battReplaceYear: getFieldNumber('battReplaceYear'),
+        battReplaceCost: getFieldNumber('battReplaceCost'),
+        gridShare: getFieldNumber('gridShare'),
+        minCash: getFieldNumber('minCash'),
+        debtShare: getFieldNumber('debtShare'),
+        interestRate: getFieldNumber('interestRate'),
+        loanTenor: getFieldNumber('loanTenor')
+      };
+    }
+
+    function restoreBasePreset() {
+      if (!basePresetSnapshot) return;
+      setFieldNumber('usableFrac', basePresetSnapshot.usableFrac);
+      setFieldNumber('fixedTariff', basePresetSnapshot.fixedTariff);
+      setFieldNumber('tariff', basePresetSnapshot.tariff);
+      setFieldNumber('omPct', basePresetSnapshot.omPct);
+      setFieldNumber('battReplaceYear', basePresetSnapshot.battReplaceYear);
+      setFieldNumber('battReplaceCost', basePresetSnapshot.battReplaceCost);
+      setFieldNumber('gridShare', basePresetSnapshot.gridShare);
+      setFieldNumber('minCash', basePresetSnapshot.minCash);
+      setFieldNumber('debtShare', basePresetSnapshot.debtShare);
+      setFieldNumber('interestRate', basePresetSnapshot.interestRate);
+      setFieldNumber('loanTenor', basePresetSnapshot.loanTenor);
+    }
+
+    function applyScenarioPreset() {
+      const modeEl = document.getElementById('scenarioPreset');
+      if (!modeEl) return;
+      const mode = modeEl.value;
+
+      if (mode === 'custom') {
+        // Restore original captured values
+        restoreBasePreset();
+        calculateAll();
+        return;
+      }
+
+      // Capture original values the first time a stress preset is used
+      snapshotBasePreset();
+      const b = basePresetSnapshot;
+      if (!b) return;
+
+      if (mode === 'bank_conservative') {
+        // Moderate, lender-style stress
+        setFieldNumber('usableFrac', b.usableFrac * 0.85);          // ~15% lower demand
+        setFieldNumber('fixedTariff', b.fixedTariff * 0.90);        // ~10% tariff cut
+        setFieldNumber('tariff', b.tariff * 0.90);
+        setFieldNumber('omPct', b.omPct * 1.30);                    // +30% O&M
+        setFieldNumber('battReplaceYear', Math.max(1, Math.round(b.battReplaceYear - 3))); // bring forward
+        setFieldNumber('battReplaceCost', b.battReplaceCost * 1.25); // +25% replacement cost
+        setFieldNumber('gridShare', Math.min(100, b.gridShare + 10)); // +10% grid energy share
+        setFieldNumber('minCash', b.minCash * 1.50);                // higher covenant
+        // keep debt share, interest and tenor as-is so DSCR impact is visible on same structure
+      } else if (mode === 'severe_downside') {
+        // Harsher "tail risk" case
+        setFieldNumber('usableFrac', b.usableFrac * 0.70);          // ~30% lower demand
+        setFieldNumber('fixedTariff', b.fixedTariff * 0.80);        // ~20% tariff cut
+        setFieldNumber('tariff', b.tariff * 0.80);
+        setFieldNumber('omPct', b.omPct * 1.50);                    // +50% O&M
+        setFieldNumber('battReplaceYear', Math.max(1, Math.round(b.battReplaceYear - 5)));
+        setFieldNumber('battReplaceCost', b.battReplaceCost * 1.40); // +40% replacement cost
+        setFieldNumber('gridShare', Math.min(100, b.gridShare + 20));
+        setFieldNumber('minCash', b.minCash * 2.00);                // very conservative buffer
+        // slightly tighten financing to reflect tougher environment
+        setFieldNumber('debtShare', Math.min(100, b.debtShare + 5)); // allow stress on leverage
+        setFieldNumber('interestRate', b.interestRate * 1.10);      // +10% relative interest
+        setFieldNumber('loanTenor', b.loanTenor);                   // keep tenor fixed
+      }
+
+      calculateAll();
     }
 
     function calculateAll() {
@@ -887,6 +1305,49 @@
       // Year-1 net op cashflow
       const netOpYear1 = netOperating[1];
 
+      // === Profitability & margins building blocks (Year 1) ===
+      const revYear1  = revenue[1] || 0;
+      const gridY1    = gridCost[1] || 0;
+      const omY1      = omCost[1] || 0;
+      const insY1     = insuranceCost[1] || 0;
+      const opexY1    = omY1 + insY1;
+      const totalExpY1 = gridY1 + opexY1;
+
+      // Approximate Year-1 interest payable (simple)
+      let interestYear1 = 0;
+      if (debtAmount > 0 && interestRate > 0) {
+        interestYear1 = debtAmount * interestRate;
+      }
+
+      // Gross profit & margin
+      const grossProfitY1 = revYear1 - gridY1;
+      let grossMarginY1 = null;
+      if (revYear1 > 0) {
+        grossMarginY1 = grossProfitY1 / revYear1;
+      }
+
+      // Net profit after interest & interest coverage
+      const netProfitY1 = netOpYear1 - interestYear1;
+      let netOverInterest = null;
+      if (interestYear1 > 0) {
+        netOverInterest = netProfitY1 / interestYear1;
+      }
+
+      // OPEX as % of revenue
+      let opexPctY1 = null;
+      if (revYear1 > 0) {
+        opexPctY1 = opexY1 / revYear1;
+      }
+
+      // EBITDA (approx. net operating) margin over expenditure
+      const ebitdaY1 = netOpYear1;
+      let ebitdaMarginOverExp = null;
+      if (totalExpY1 > 0) {
+        ebitdaMarginOverExp = ebitdaY1 / totalExpY1;
+      }
+
+
+
       // Populate summary fields
       document.getElementById('sumSystemSize').textContent =
         formatNumber(pvSize, 0) + " kWp PV";
@@ -908,7 +1369,53 @@
         " (before grid costs & O&M).";
 
       document.getElementById('sumNetOpYear1').textContent =
-        "R " + formatNumber(netOpYear1, 0);
+                   "R " + formatNumber(netOpYear1, 0);
+
+              // Update Equity & Revenue Share section title dynamically
+      var pnEl = document.getElementById('projectName');
+      var epv  = document.getElementById('equityProjectView');
+      if (epv) {
+                  var pn = pnEl && pnEl.value ? pnEl.value.trim() : "";
+                  epv.textContent = pn ? (pn + " View") : "Project View";
+               }
+
+
+      // Profitability & margins summary values
+      if (isFinite(grossProfitY1)) {
+        document.getElementById('sumGrossProfit').textContent =
+          "R " + formatNumber(grossProfitY1, 0);
+      } else {
+        document.getElementById('sumGrossProfit').textContent = "N/A";
+      }
+
+      if (grossMarginY1 != null && isFinite(grossMarginY1)) {
+        document.getElementById('sumGrossMargin').textContent =
+          formatNumber(grossMarginY1 * 100, 1) + " %";
+      } else {
+        document.getElementById('sumGrossMargin').textContent = "N/A";
+      }
+
+      if (opexPctY1 != null && isFinite(opexPctY1)) {
+        document.getElementById('sumOpexPct').textContent =
+          formatNumber(opexPctY1 * 100, 1) + " %";
+      } else {
+        document.getElementById('sumOpexPct').textContent = "N/A";
+      }
+
+      if (netOverInterest != null && isFinite(netOverInterest)) {
+        document.getElementById('sumNetOverInterest').textContent =
+          formatNumber(netOverInterest, 2) + " ×";
+      } else {
+        document.getElementById('sumNetOverInterest').textContent = "N/A";
+      }
+
+      if (ebitdaMarginOverExp != null && isFinite(ebitdaMarginOverExp)) {
+        document.getElementById('sumEbitdaMargin').textContent =
+          formatNumber(ebitdaMarginOverExp, 2) + " ×";
+      } else {
+        document.getElementById('sumEbitdaMargin').textContent = "N/A";
+      }
+
 
       document.getElementById('sumDebtEquity').textContent =
         "Debt: R " + formatNumber(debtAmount, 0) +
@@ -983,6 +1490,39 @@
         if (netOpRatio >= 0.12)      netOpElem.className = "stat-value metric-good";
         else if (netOpRatio >= 0.08) netOpElem.className = "stat-value metric-warn";
         else                         netOpElem.className = "stat-value metric-bad";
+      }
+
+
+      // Profitability & margin colour coding
+      const grossMarginElem = document.getElementById('sumGrossMargin');
+      if (grossMarginY1 != null && isFinite(grossMarginY1)) {
+        if (grossMarginY1 >= 0.40)           grossMarginElem.className = "stat-value metric-good";
+        else if (grossMarginY1 >= 0.25)      grossMarginElem.className = "stat-value metric-warn";
+        else                                 grossMarginElem.className = "stat-value metric-bad";
+      }
+
+      const grossProfitElem = document.getElementById('sumGrossProfit');
+      grossProfitElem.className = grossMarginElem.className;
+
+      const opexElem = document.getElementById('sumOpexPct');
+      if (opexPctY1 != null && isFinite(opexPctY1)) {
+        if (opexPctY1 <= 0.20)               opexElem.className = "stat-value metric-good";
+        else if (opexPctY1 <= 0.30)          opexElem.className = "stat-value metric-warn";
+        else                                 opexElem.className = "stat-value metric-bad";
+      }
+
+      const covElem = document.getElementById('sumNetOverInterest');
+      if (netOverInterest != null && isFinite(netOverInterest)) {
+        if (netOverInterest >= 2.0)          covElem.className = "stat-value metric-good";
+        else if (netOverInterest >= 1.2)     covElem.className = "stat-value metric-warn";
+        else                                 covElem.className = "stat-value metric-bad";
+      }
+
+      const ebitdaElem = document.getElementById('sumEbitdaMargin');
+      if (ebitdaMarginOverExp != null && isFinite(ebitdaMarginOverExp)) {
+        if (ebitdaMarginOverExp >= 0.75)     ebitdaElem.className = "stat-value metric-good";
+        else if (ebitdaMarginOverExp >= 0.50) ebitdaElem.className = "stat-value metric-warn";
+        else                                 ebitdaElem.className = "stat-value metric-bad";
       }
 
       // Project payback (pre-finance)
